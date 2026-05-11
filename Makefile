@@ -1,14 +1,13 @@
 .PHONY: setup lint test format
 
 setup:
-python -m pip install -U pip
-python -m pip install ruff pytest
+	./scripts/setup.sh
 
 lint:
-ruff check .
+	ruff check .
 
 test:
-pytest -q
+	pytest -q
 
 format:
-ruff format .
+	ruff format .
