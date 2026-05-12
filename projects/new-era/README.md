@@ -2,6 +2,127 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ---
 
+## Deploy from Scratch
+
+Complete guide to get this website running and publicly accessible on the internet from a fresh machine.
+
+### Step 1 — Install system dependencies
+
+> Skip any tool you already have.
+
+**macOS (Homebrew)**
+
+```bash
+# Install Homebrew if not present
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Git
+brew install git
+
+# Docker Desktop (includes docker compose)
+brew install --cask docker
+open -a Docker   # launch Docker Desktop and wait for it to fully start
+
+# Cloudflare Tunnel CLI
+brew install cloudflare/cloudflare/cloudflared
+```
+
+**Linux (Debian/Ubuntu)**
+
+```bash
+# Git + Docker
+sudo apt update && sudo apt install -y git docker.io docker-compose-plugin
+sudo systemctl enable --now docker
+sudo usermod -aG docker $USER   # log out and back in after this
+
+# Cloudflare Tunnel CLI
+curl -L https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb -o cloudflared.deb
+sudo dpkg -i cloudflared.deb && rm cloudflared.deb
+```
+
+### Step 2 — Clone the repository
+
+```bash
+git clone https://github.com/richardnguyen0715/keep-it-real.git
+cd keep-it-real/projects/new-era
+```
+
+### Step 3 — Build and start the containers
+
+```bash
+docker compose up -d --build
+```
+
+This builds the Next.js production image and starts two containers:
+- `new-era-app` — the Next.js app on port 3000 (internal only)
+- `new-era-nginx` — hardened Nginx reverse proxy on port 80
+
+Verify both are healthy:
+
+```bash
+docker compose ps
+# Expected: both containers show "Up"
+
+curl -s -o /dev/null -w "%{http_code}" http://localhost:80
+# Expected: 200
+```
+
+### Step 4 — Open a public HTTPS tunnel
+
+```bash
+nohup cloudflared tunnel --url http://localhost:80 > /tmp/cloudflared.log 2>&1 &
+```
+
+Wait ~10 seconds, then get your public URL:
+
+```bash
+grep -o 'https://.*trycloudflare\.com' /tmp/cloudflared.log
+```
+
+You will see something like:
+
+```
+https://random-words-here.trycloudflare.com
+```
+
+Open that URL in any browser — your site is live on the internet over HTTPS. Share it with anyone.
+
+---
+
+## Manage the running demo
+
+```bash
+# View live tunnel logs
+tail -f /tmp/cloudflared.log
+
+# View container logs
+docker compose logs -f
+
+# Container status
+docker compose ps
+
+# Stop the public tunnel (site goes offline, containers keep running)
+kill $(pgrep cloudflared)
+
+# Stop everything
+kill $(pgrep cloudflared); docker compose down
+```
+
+---
+
+## Restart after a reboot
+
+The tunnel URL changes every time. After rebooting your machine, repeat Steps 3 and 4:
+
+```bash
+cd keep-it-real/projects/new-era
+docker compose up -d
+nohup cloudflared tunnel --url http://localhost:80 > /tmp/cloudflared.log 2>&1 &
+sleep 10 && grep -o 'https://.*trycloudflare\.com' /tmp/cloudflared.log
+```
+
+---
+
 ## Local Development
 
 ```bash
