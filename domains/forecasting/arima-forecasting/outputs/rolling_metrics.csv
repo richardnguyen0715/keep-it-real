@@ -1,0 +1,7 @@
+metric,value
+MAE,4.3983
+RMSE,5.5843
+MAPE (%),15.03
+SMAPE (%),14.7841
+R²,0.6192
+MASE,2.3689
